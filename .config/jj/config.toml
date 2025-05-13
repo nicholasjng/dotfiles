@@ -1,3 +1,7 @@
 [user]
 name = "Nicholas Junge"
 email = "nicho.junge@gmail.com"
+
+[ui]
+# Use difftastic by default
+diff.tool = ["difft", "--color=always", "$left", "right"]
