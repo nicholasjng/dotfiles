@@ -4,4 +4,8 @@ email = "nicho.junge@gmail.com"
 
 [ui]
 # Use difftastic by default
-diff.tool = ["difft", "--color=always", "$left", "right"]
+diff.tool = "difft"
+
+[merge-tools.difft]
+diff-args = ["--color=always", "$left", "$right"]
+diff-invocation-mode = "file-by-file"
