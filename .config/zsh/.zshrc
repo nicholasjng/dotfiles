@@ -69,9 +69,11 @@ eval "$(zoxide init zsh)"
 
 function zsh_update_plugins() {
     local d
+    print -P '%B%F{blue}==>%f%b %BUpdating plugins...%b'
     for d in "$ZPLUGIN_DIR"/*/; do
         [[ -e "$d/.git" ]] || continue
-        printf 'Updating %s...\n' "${d:t}"
+        print -P "  %F{yellow}·%f ${d:t}"
         git -C "$d" pull --ff-only
     done
+    print -P '  %F{green}✓%f Done.'
 }
