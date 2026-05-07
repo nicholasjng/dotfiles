@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/Workspaces/c++/dotfiles}"
+DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 
 if [[ ! -d "$DOTFILES_DIR/.git" ]]; then
     echo "Dotfiles repo not found at $DOTFILES_DIR"

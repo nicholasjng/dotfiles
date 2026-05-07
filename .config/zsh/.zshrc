@@ -64,8 +64,6 @@ case "$(uname -s)" in
 esac
 
 # --- Tools ---
-source "$BREW_PREFIX/share/google-cloud-sdk/path.zsh.inc"
-source "$BREW_PREFIX/share/google-cloud-sdk/completion.zsh.inc"
 eval "$(fzf --zsh)"
 eval "$(zoxide init zsh)"
 
