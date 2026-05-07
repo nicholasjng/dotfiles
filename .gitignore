@@ -4,19 +4,15 @@
 # Python
 venv
 .venv
-env
 
-# PyCharm PHP
-.idea
+# environment secrets
+env
+.env
 
 # various vscode stuff
 .vscode/
 .cache/
-
 .sandbox/
-
-# pyright LSP config
-pyrightconfig.json
 
 # Zed config folders
 .zed
