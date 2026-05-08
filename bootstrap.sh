@@ -17,7 +17,7 @@ fi
 info "Initialising submodules..."
 git -C "$DOTFILES_DIR" submodule update --init --recursive
 
-backup_dir="$DOTFILES_DIR/backup"
+backup_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles-backup"
 mkdir -p "$backup_dir" "$HOME/.config"
 
 # Back up a file or directory to the backup dir, then remove it.

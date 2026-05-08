@@ -21,6 +21,3 @@ env
 .config/zsh/.zsh_history
 .config/zsh/.zcompdump
 .config/zsh/.zcompcache
-
-# local backups when bootstrapping dotfiles
-backup/
