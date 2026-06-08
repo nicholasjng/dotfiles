@@ -64,6 +64,7 @@ esac
 # --- Tools ---
 eval "$(fzf --zsh)"
 eval "$(zoxide init zsh)"
+command -v picky >/dev/null && eval "$(picky completions zsh)"
 
 function zsh_update_plugins() {
     local d
