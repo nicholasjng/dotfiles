@@ -33,6 +33,14 @@ jjprompt_in_git_repo() {
   return 1
 }
 
+# Count commits in a revset by emitting one '.' per commit and taking the
+# resulting string length — avoids a pipe to `wc -l`. Result in $REPLY.
+jjprompt_revcount() {
+  local out
+  out=$(command jj log --ignore-working-copy --no-graph -r "$1" -T '"."' 2>/dev/null)
+  REPLY=${#out}
+}
+
 # Format a duration (seconds) as e.g. "1d 3h 2m 5s", dropping leading zeros.
 # Result is returned in $REPLY (zsh convention) to avoid a subshell.
 jjprompt_human_time() {
@@ -55,42 +63,55 @@ jjprompt_vcs_render() {
   jjprompt_vcs=''
 
   if jjprompt_in_jj_repo; then
-    # Fields, \x1f-separated: change-id, local bookmarks on @, then markers+desc.
-    # Bookmarks are split out so we can detect when @ is anonymous (the usual
-    # case) and fall back to the nearest ancestor bookmark below.
+    # Fields, \x1f-separated: change-id, local bookmarks on @, state markers
+    # (space-joined glyphs), and the description. Markers are their own field
+    # so we can color each one individually after parsing — see the loop below.
     local out
     out=$(command jj log --ignore-working-copy --no-graph --color=never -r @ -T \
-      'change_id.shortest(8) ++ "\x1f" ++ local_bookmarks.join(" ") ++ "\x1f" ++ separate(" ", if(conflict, "conflict"), if(divergent, "divergent"), if(empty, "(empty)"), coalesce(description.first_line(), "(no description)"))' \
+      'change_id.shortest(8) ++ "\x1f" ++ local_bookmarks.join(" ") ++ "\x1f" ++ separate(" ", if(conflict, "✗"), if(divergent, "↯"), if(parents.len() > 1, "⌥"), if(empty, "∅")) ++ "\x1f" ++ coalesce(description.first_line(), "(no description)")' \
       2>/dev/null)
     [[ -z $out ]] && return
     out=${out//\%/%%}
-    local cid=${out%%$'\x1f'*} tmp=${out#*$'\x1f'}
-    local bm=${tmp%%$'\x1f'*} rest=${tmp#*$'\x1f'}
+    local cid=${out%%$'\x1f'*}; out=${out#*$'\x1f'}
+    local bm=${out%%$'\x1f'*}; out=${out#*$'\x1f'}
+    local markers=${out%%$'\x1f'*} desc=${out#*$'\x1f'}
 
-    # If @ carries no bookmark (anonymous working copy), show the nearest
-    # ancestor bookmark with its distance, e.g. "main+2". Costs two extra jj
-    # calls, but only in this (common) fallback path.
+    # Color each state marker individually; severity-coded so the eye catches
+    # conflicts first. Built here (not in the template) because the template
+    # output is %-escaped above, which would mangle %F{...} prompt sequences.
+    local rest='' m
+    for m in ${(s: :)markers}; do
+      case $m in
+        ✗) rest+=" %F{red}${m}%f" ;;
+        ↯) rest+=" %F{yellow}${m}%f" ;;
+        ⌥) rest+=" %F{cyan}${m}%f" ;;
+        ∅) rest+=" %F{244}${m}%f" ;;
+      esac
+    done
+    rest+=" %F{244}${desc}%f"
+
+    # If @ carries no bookmark (anonymous working copy — the common case), show
+    # the nearest ancestor bookmark as the base, e.g. "main". The commit distance
+    # is omitted because trunk() usually resolves to the same bookmark, so it
+    # would just duplicate the ⇡N arrow below. Adds one jj call on top of the
+    # three already issued per render (main, ahead, behind) — four total.
     if [[ -z $bm ]]; then
       local near
       near=$(command jj log --ignore-working-copy --no-graph -r 'heads(::@ & bookmarks())' -T 'local_bookmarks.join(",")' 2>/dev/null)
-      if [[ -n $near ]]; then
-        local d
-        d=$(command jj log --ignore-working-copy --no-graph -r 'heads(::@ & bookmarks())..@' -T '"."' 2>/dev/null)
-        bm="${near//\%/%%}+${#d}"
-      fi
+      [[ -n $near ]] && bm=${near//\%/%%}
     fi
     [[ -n $bm ]] && bm=" %F{green}${bm}%f"
 
     # Ahead/behind of trunk(); the empty working-copy commit is excluded so a
     # fresh `jj new trunk` doesn't read as "1 ahead". Silent if trunk() is N/A.
-    local ahead behind arrows=''
-    ahead=$(command jj log --ignore-working-copy --no-graph -r 'trunk()..@ ~ (@ & empty())' -T '"."' 2>/dev/null)
-    behind=$(command jj log --ignore-working-copy --no-graph -r '@..trunk()' -T '"."' 2>/dev/null)
-    (( ${#ahead} ))  && arrows+="⇡${#ahead}"
-    (( ${#behind} )) && arrows+="⇣${#behind}"
+    local REPLY arrows=''
+    jjprompt_revcount 'trunk()..@ ~ (@ & empty())'
+    (( REPLY )) && arrows+="⇡${REPLY}"
+    jjprompt_revcount '@..trunk()'
+    (( REPLY )) && arrows+="⇣${REPLY}"
     [[ -n $arrows ]] && arrows=" %F{cyan}${arrows}%f"
 
-    jjprompt_vcs=" %F{244}•%f %F{magenta}${cid}%f${bm} %F{244}${rest}%f${arrows}"
+    jjprompt_vcs=" %F{244}•%f %F{magenta}${cid}%f${bm}${rest}${arrows}"
     return
   fi
 
