@@ -57,3 +57,22 @@ if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
 fi
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
+
+#
+# Prune dead PATH entries
+#
+
+# macOS recreates files under /etc/paths.d on every OS update (the Cryptex
+# bootstrap dirs and a stale /pkg/env/global/bin), and /etc/zprofile's
+# path_helper injects them before this file runs. Deleting the root-owned
+# drop-ins needs sudo and the next update brings them back, so instead drop
+# any entry whose directory doesn't actually exist on disk.
+function prune_path() {
+  local -a kept
+  local dir
+  for dir in $path; do
+    [[ -d $dir ]] && kept+=$dir
+  done
+  path=($kept)
+}
+prune_path
