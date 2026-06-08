@@ -17,6 +17,7 @@ if ! command -v cargo >/dev/null; then
     exit 1
 fi
 
+updated=false
 if [[ ! -d "$HELIX_SRC/.git" ]]; then
     info "Cloning Helix into $HELIX_SRC..."
     mkdir -p "$(dirname "$HELIX_SRC")"
@@ -25,10 +26,7 @@ else
     info "Updating checkout to latest master..."
     git -C "$HELIX_SRC" fetch --depth 1 origin master
     git -C "$HELIX_SRC" reset --hard origin/master
-
-    info "Pruning previous checkout..."
-    git -C "$HELIX_SRC" reflog expire --expire=now --all
-    git -C "$HELIX_SRC" gc --prune=now --quiet
+    updated=true
 fi
 
 info "Building (cargo build --release)... this can take a while."
@@ -41,5 +39,11 @@ ln -sf "$HELIX_SRC/target/release/hx" "$HOME/.local/bin/hx"
 info "Fetching and building grammars..."
 HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar fetch
 HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar build
+
+if [[ "$updated" == true ]]; then
+    info "Pruning previous checkout..."
+    git -C "$HELIX_SRC" reflog expire --expire=now --all
+    git -C "$HELIX_SRC" gc --prune=now --quiet
+fi
 
 success "Done. $("$HOME/.local/bin/hx" --version)"
