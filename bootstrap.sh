@@ -6,13 +6,24 @@ success() { printf '\033[1;32m  ✓\033[0m %s\n' "$*"; }
 backup()  { printf '\033[1;33m  ·\033[0m Backing up %s\n' "$*"; }
 error()   { printf '\033[1;31mError:\033[0m %s\n' "$*" >&2; }
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+# Default to the directory this script lives in, so the repo can be moved
+# anywhere without the symlinks drifting. Override with DOTFILES_DIR=... if needed.
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 
 if [[ ! -d "$DOTFILES_DIR/.git" ]]; then
     error "Dotfiles repo not found at $DOTFILES_DIR"
     error "Clone it first, or set DOTFILES_DIR to its location."
     exit 1
 fi
+
+if ! command -v brew >/dev/null; then
+    info "Homebrew not found, installing..."
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+info "Installing Homebrew packages..."
+brew bundle install --no-upgrade --file="$DOTFILES_DIR/Brewfile"
 
 info "Initialising submodules..."
 git -C "$DOTFILES_DIR" submodule update --init --recursive
