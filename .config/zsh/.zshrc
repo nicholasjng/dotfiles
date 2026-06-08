@@ -19,7 +19,7 @@ zmodload zsh/complist
 _comp_options+=(globdots)
 zle_highlight=('paste:none')
 
-fpath+=("$ZPLUGIN_DIR/pure" "$BREW_PREFIX/share/zsh/site-functions")
+fpath+=("$BREW_PREFIX/share/zsh/site-functions")
 autoload -Uz compinit
 for dump in "$ZDOTDIR/.zcompdump"(N.mh+24); do
     compinit
@@ -38,11 +38,9 @@ _plug "zsh-autosuggestions"
 _plug "zsh-syntax-highlighting"
 
 # --- Prompt ---
-autoload -Uz promptinit; promptinit
-prompt pure
-export PURE_PROMPT_SYMBOL="➜"
-zstyle ':prompt:pure:prompt:success' color green
-zstyle ':prompt:pure:prompt:error' color red
+# jj-prompt: a dependency-free, jj-first two-line prompt with a git fallback.
+# Self-contained in plugins/jj-prompt (symbol + success/error colors included).
+_plug "jj-prompt"
 
 # --- Key bindings ---
 autoload -Uz colors && colors

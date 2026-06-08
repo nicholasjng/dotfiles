@@ -41,7 +41,11 @@ backup_and_remove "$HOME/.zshrc"
 backup_and_remove "$HOME/.zprofile"
 
 # ~/.config/zsh (whole directory — no runtime data mixed in)
-if [[ -d "$HOME/.config/zsh" && ! -L "$HOME/.config/zsh" ]]; then
+# Remove an existing symlink first: `ln -sf` onto a symlink-to-directory would
+# dereference it and create the link *inside* the target (~/.config/zsh/zsh).
+if [[ -L "$HOME/.config/zsh" ]]; then
+    rm -f "$HOME/.config/zsh"
+elif [[ -d "$HOME/.config/zsh" ]]; then
     backup_and_remove "$HOME/.config/zsh" "zsh"
 fi
 ln -sf "$DOTFILES_DIR/.config/zsh" "$HOME/.config/zsh"
