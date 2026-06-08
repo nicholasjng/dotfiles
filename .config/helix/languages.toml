@@ -1,3 +1,8 @@
+# Controls which tree-sitter grammars `hx --grammar fetch`/`build` fetch and
+# compile (see bin/helix-build). Trim or extend this list to match the
+# languages you actually edit.
+use-grammars = { only = ["python", "rust", "toml", "bash", "markdown", "c", "cpp", "go"] }
+
 [[language]]
 name = "python"
 

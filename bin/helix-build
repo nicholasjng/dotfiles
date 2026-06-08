@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Build Helix from a local checkout of upstream master and install it to
+# ~/.local/bin. Re-run to pull the latest master and rebuild. Which
+# tree-sitter grammars get fetched/built is controlled by the `use-grammars`
+# key in ~/.config/helix/languages.toml.
+set -euo pipefail
+
+info()    { printf '\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
+success() { printf '\033[1;32m  ✓\033[0m %s\n' "$*"; }
+error()   { printf '\033[1;31mError:\033[0m %s\n' "$*" >&2; }
+
+HELIX_SRC="${HELIX_SRC:-$HOME/.local/src/helix}"
+HELIX_REPO="https://github.com/helix-editor/helix"
+
+if ! command -v cargo >/dev/null; then
+    error "cargo not found. Install the Rust toolchain first (e.g. via rustup)."
+    exit 1
+fi
+
+if [[ ! -d "$HELIX_SRC/.git" ]]; then
+    info "Cloning Helix into $HELIX_SRC..."
+    mkdir -p "$(dirname "$HELIX_SRC")"
+    git clone --depth 1 "$HELIX_REPO" "$HELIX_SRC"
+else
+    info "Updating checkout to latest master..."
+    git -C "$HELIX_SRC" fetch --depth 1 origin master
+    git -C "$HELIX_SRC" reset --hard origin/master
+
+    info "Pruning previous checkout..."
+    git -C "$HELIX_SRC" reflog expire --expire=now --all
+    git -C "$HELIX_SRC" gc --prune=now --quiet
+fi
+
+info "Building (cargo build --release)... this can take a while."
+cargo build --release --manifest-path "$HELIX_SRC/Cargo.toml"
+
+info "Installing binary to ~/.local/bin/hx..."
+mkdir -p "$HOME/.local/bin"
+ln -sf "$HELIX_SRC/target/release/hx" "$HOME/.local/bin/hx"
+
+info "Fetching and building grammars..."
+HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar fetch
+HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar build
+
+success "Done. $("$HOME/.local/bin/hx" --version)"

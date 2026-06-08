@@ -50,16 +50,22 @@ fi
 ln -sf "$DOTFILES_DIR/.config/zsh" "$HOME/.config/zsh"
 
 # Individual config files
-mkdir -p "$HOME/.config/ghostty" "$HOME/.config/helix" "$HOME/.config/jj" "$HOME/.config/zed"
+mkdir -p "$HOME/.config/ghostty"
+mkdir -p "$HOME/.config/helix"
+mkdir -p "$HOME/.config/jj"
+mkdir -p "$HOME/.config/zed"
+mkdir -p "$HOME/.local/bin"
 
 backup_and_remove "$HOME/.config/ghostty/config"       "ghostty_config"
 backup_and_remove "$HOME/.config/helix/languages.toml" "helix_languages.toml"
 backup_and_remove "$HOME/.config/jj/config.toml"       "jj_config.toml"
 backup_and_remove "$HOME/.config/zed/settings.json"    "zed_settings.json"
+backup_and_remove "$HOME/.local/bin/helix-build"       "helix_build_script"
 
 ln -sf "$DOTFILES_DIR/.config/ghostty/config"       "$HOME/.config/ghostty/config"
 ln -sf "$DOTFILES_DIR/.config/helix/languages.toml" "$HOME/.config/helix/languages.toml"
 ln -sf "$DOTFILES_DIR/.config/jj/config.toml"       "$HOME/.config/jj/config.toml"
 ln -sf "$DOTFILES_DIR/.config/zed/settings.json"    "$HOME/.config/zed/settings.json"
+ln -sf "$DOTFILES_DIR/bin/helix-build"              "$HOME/.local/bin/helix-build"
 
 success "Done. Open a new shell to pick up the new config."

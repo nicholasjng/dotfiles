@@ -12,6 +12,11 @@ if [[ -z "$PAGER" ]]; then
   export PAGER='less'
 fi
 
+# Point at the runtime dir of the local source build (see bin/helix-build).
+if [[ -z "$HELIX_RUNTIME" && -d "$HOME/.local/src/helix/runtime" ]]; then
+  export HELIX_RUNTIME="$HOME/.local/src/helix/runtime"
+fi
+
 #
 # Language
 #
