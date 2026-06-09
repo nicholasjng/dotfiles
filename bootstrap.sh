@@ -40,9 +40,8 @@ ln -sf "$DOTFILES_DIR/.zshenv" "$HOME/.zshenv"
 backup_and_remove "$HOME/.zshrc"
 backup_and_remove "$HOME/.zprofile"
 
-# ~/.config/zsh (whole directory — no runtime data mixed in)
-# Remove an existing symlink first: `ln -sf` onto a symlink-to-directory would
-# dereference it and create the link *inside* the target (~/.config/zsh/zsh).
+# ~/.config/zsh (whole directory). Remove an existing symlink first, else
+# `ln -sf` would dereference it and link inside the target.
 if [[ -L "$HOME/.config/zsh" ]]; then
     rm -f "$HOME/.config/zsh"
 elif [[ -d "$HOME/.config/zsh" ]]; then

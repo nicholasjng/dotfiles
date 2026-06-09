@@ -1,19 +1,10 @@
 #!/usr/bin/env zsh
-# jj-prompt — a minimal, dependency-free zsh prompt with first-class jj
-# (Jujutsu) support and a lightweight git fallback. Two-line, Pure-like layout:
-#
-#     ~/path  jj <change-id> <bookmarks/markers> <desc> ⇡N⇣N   3s
-#     ➜
-#
-# TRY IT (without touching your config): in a scratch shell, run
-#     source ~/.config/zsh/plugins/jj-prompt/jj-prompt.plugin.zsh
-# Sourcing activates it and steps aside from Pure for that shell only; open a
-# new shell to get Pure back. To ADOPT it, replace the `prompt pure` block (and
-# the jj-on-Pure hack) in .zshrc with `_plug "jj-prompt"`.
+# jj-prompt — minimal, dependency-free zsh prompt with first-class jj (Jujutsu)
+# support and a git fallback. Two-line, Pure-like layout.
 #
 # Knobs: $JJPROMPT_SYMBOL (default ➜), $JJPROMPT_MAX_EXEC_TIME (seconds, 5).
 
-# --- repo detection (process-free: just walk up looking for the marker dir) --
+# --- repo detection ----------------------------------------------------------
 
 jjprompt_in_jj_repo() {
   local d=$PWD
@@ -33,8 +24,8 @@ jjprompt_in_git_repo() {
   return 1
 }
 
-# Count commits in a revset by emitting one '.' per commit and taking the
-# resulting string length — avoids a pipe to `wc -l`. Result in $REPLY.
+# Count commits in a revset without a pipe to wc: emit one '.' per commit and
+# take the resulting string length. Result in $REPLY.
 jjprompt_revcount() {
   local out
   out=$(command jj log --ignore-working-copy --no-graph -r "$1" -T '"."' 2>/dev/null)
@@ -42,7 +33,6 @@ jjprompt_revcount() {
 }
 
 # Format a duration (seconds) as e.g. "1d 3h 2m 5s", dropping leading zeros.
-# Result is returned in $REPLY (zsh convention) to avoid a subshell.
 jjprompt_human_time() {
   local -i t=$1 d h m s
   (( d = t / 86400, h = t % 86400 / 3600, m = t % 3600 / 60, s = t % 60 ))
@@ -54,18 +44,15 @@ jjprompt_human_time() {
 }
 
 # --- VCS segment -------------------------------------------------------------
-# Sets $jjprompt_vcs. jj wins over git, so colocated repos read as jj.
-# --ignore-working-copy keeps jj from snapshotting / creating an op per render.
-# Dynamic text is %-escaped so a bookmark/branch/description containing '%'
-# can't be misread as a prompt escape once prompt_subst expands the segment.
+# jj wins over git, so colocated repos read as jj. --ignore-working-copy keeps
+# jj from snapshotting per render. Dynamic text is %-escaped so a '%' in a
+# bookmark/description isn't misread as a prompt escape under prompt_subst.
 
 jjprompt_vcs_render() {
   jjprompt_vcs=''
 
   if jjprompt_in_jj_repo; then
-    # Fields, \x1f-separated: change-id, local bookmarks on @, state markers
-    # (space-joined glyphs), and the description. Markers are their own field
-    # so we can color each one individually after parsing — see the loop below.
+    # Fields, \x1f-separated: change-id, bookmarks on @, state markers, description.
     local out
     out=$(command jj log --ignore-working-copy --no-graph --color=never -r @ -T \
       'change_id.shortest(8) ++ "\x1f" ++ local_bookmarks.join(" ") ++ "\x1f" ++ separate(" ", if(conflict, "✗"), if(divergent, "↯"), if(parents.len() > 1, "⌥"), if(empty, "∅")) ++ "\x1f" ++ coalesce(description.first_line(), "(no description)")' \
@@ -76,9 +63,8 @@ jjprompt_vcs_render() {
     local bm=${out%%$'\x1f'*}; out=${out#*$'\x1f'}
     local markers=${out%%$'\x1f'*} desc=${out#*$'\x1f'}
 
-    # Color each state marker individually; severity-coded so the eye catches
-    # conflicts first. Built here (not in the template) because the template
-    # output is %-escaped above, which would mangle %F{...} prompt sequences.
+    # Color each marker individually (here, not in the template, since the
+    # template output is %-escaped above, which would mangle %F{...} sequences).
     local rest='' m
     for m in ${(s: :)markers}; do
       case $m in
@@ -90,11 +76,8 @@ jjprompt_vcs_render() {
     done
     rest+=" %F{244}${desc}%f"
 
-    # If @ carries no bookmark (anonymous working copy — the common case), show
-    # the nearest ancestor bookmark as the base, e.g. "main". The commit distance
-    # is omitted because trunk() usually resolves to the same bookmark, so it
-    # would just duplicate the ⇡N arrow below. Adds one jj call on top of the
-    # three already issued per render (main, ahead, behind) — four total.
+    # If @ carries no bookmark (anonymous working copy), show the nearest
+    # ancestor bookmark as the base.
     if [[ -z $bm ]]; then
       local near
       near=$(command jj log --ignore-working-copy --no-graph -r 'heads(::@ & bookmarks())' -T 'local_bookmarks.join(",")' 2>/dev/null)
@@ -102,8 +85,7 @@ jjprompt_vcs_render() {
     fi
     [[ -n $bm ]] && bm=" %F{green}${bm}%f"
 
-    # Ahead/behind of trunk(); the empty working-copy commit is excluded so a
-    # fresh `jj new trunk` doesn't read as "1 ahead". Silent if trunk() is N/A.
+    # Ahead/behind of trunk(); exclude the empty @ so `jj new trunk` isn't "1 ahead".
     local REPLY arrows=''
     jjprompt_revcount 'trunk()..@ ~ (@ & empty())'
     (( REPLY )) && arrows+="⇡${REPLY}"
@@ -121,9 +103,8 @@ jjprompt_vcs_render() {
       || branch=$(command git rev-parse --short HEAD 2>/dev/null) \
       || return
     branch=${branch//\%/%%}
-    # Dirty marker. Uses porcelain (one process) so it matches Pure and catches
-    # untracked files too, at the cost of a full status scan in large repos —
-    # acceptable for the git fallback in a jj-first setup.
+    # Dirty marker via porcelain: matches Pure and catches untracked files, at
+    # the cost of a full status scan — fine for the git fallback.
     local dirty=''
     [[ -n $(command git status --porcelain --ignore-submodules 2>/dev/null) ]] && dirty='*'
     jjprompt_vcs=" %F{242}${branch}%F{218}${dirty}%f"
@@ -137,16 +118,12 @@ jjprompt_preexec() {
 }
 
 jjprompt_precmd() {
-  # Capture the command's exit status FIRST — before the arithmetic and jj/git
-  # calls below, which all overwrite $?. The symbol color is derived here into a
-  # variable rather than via PROMPT's %(?..), because PROMPT is expanded only
-  # after precmd has run those commands, by which point $? no longer reflects
-  # your command. (We also run first among precmd hooks — see jjprompt_setup.)
+  # Capture exit status FIRST — the jj/git calls below overwrite $?. Color is
+  # derived here (not via PROMPT's %(?..)) because PROMPT expands after precmd.
   local -i last_status=$?
   if (( last_status )); then jjprompt_symcolor='%F{red}'; else jjprompt_symcolor='%F{green}'; fi
 
-  # Active Python venv / conda env, rendered just before the prompt symbol.
-  # Prefer $VIRTUAL_ENV_PROMPT (the name set at venv creation) over the dir name.
+  # Active Python venv / conda env. Prefer the name set at venv creation.
   jjprompt_venv=''
   if [[ -n $VIRTUAL_ENV ]]; then
     local name=${VIRTUAL_ENV_PROMPT:-${VIRTUAL_ENV:t}}
@@ -176,8 +153,8 @@ jjprompt_setup() {
   zmodload -F zsh/datetime +p:EPOCHSECONDS 2>/dev/null
   autoload -Uz add-zsh-hook
 
-  # Step aside from Pure and the old Pure-hack hooks if they're active in this
-  # shell, so this can be sourced on top of a running Pure for a side-by-side.
+  # Step aside from Pure / the old Pure-hack hooks if active, so this can be
+  # sourced on top of a running Pure for a side-by-side.
   local fn
   for fn in prompt_pure_precmd prompt_jj_info; do
     (( $+functions[$fn] )) && add-zsh-hook -d precmd $fn
@@ -185,7 +162,7 @@ jjprompt_setup() {
   (( $+functions[prompt_pure_preexec] )) && add-zsh-hook -d preexec prompt_pure_preexec
   RPROMPT=''
 
-  # We render the env name ourselves, so silence the tools' built-in prefixes.
+  # We render env names ourselves; silence the tools' built-in prefixes.
   export VIRTUAL_ENV_DISABLE_PROMPT=1
   export CONDA_CHANGEPS1=no
 
@@ -197,12 +174,10 @@ jjprompt_setup() {
 
   add-zsh-hook precmd  jjprompt_precmd
   add-zsh-hook preexec jjprompt_preexec
-  # Run our precmd FIRST so it captures $? before any other precmd hook (e.g. the
-  # plugins above) can overwrite it; otherwise the symbol's color would be wrong.
+  # Run our precmd FIRST so it captures $? before any other precmd hook can.
   precmd_functions=(jjprompt_precmd ${precmd_functions:#jjprompt_precmd})
 
-  # Leading newline = Pure-style spacing. Symbol color is exit-status driven
-  # (computed in precmd); env name and SSH host shown around it.
+  # Leading newline = Pure-style spacing; symbol color is exit-status driven.
   PROMPT='${jjprompt_newline}${jjprompt_host}%F{blue}%~%f${jjprompt_vcs}${jjprompt_exectime}${jjprompt_newline}${jjprompt_venv}${jjprompt_symcolor}${JJPROMPT_SYMBOL:-➜}%f '
   PROMPT2='%F{242}… %f'
 }
