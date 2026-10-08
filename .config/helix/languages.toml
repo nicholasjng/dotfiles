@@ -1,7 +1,5 @@
-# Controls which tree-sitter grammars `hx --grammar fetch`/`build` fetch and
-# compile (see bin/helix-build). Trim or extend this list to match the
-# languages you actually edit.
-use-grammars = { only = ["python", "rust", "toml", "bash", "markdown", "c", "cpp", "go"] }
+# Grammars fetched and built by helix-build.
+use-grammars = { only = ["python", "rust", "toml", "yaml", "bash", "markdown", "markdown_inline", "c", "cpp", "go", "jjdescription", "jjrevset", "jjtemplate"] }
 
 [[language]]
 name = "python"
@@ -17,4 +15,3 @@ name = "source"
 request = "launch"
 completion = [ { name = "entrypoint", completion = "filename", default = "." } ]
 args = { mode = "debug", program = "{0}"}
-
