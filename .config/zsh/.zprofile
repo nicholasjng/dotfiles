@@ -1,7 +1,3 @@
-#
-# Editors
-#
-
 if [[ -z "$EDITOR" ]]; then
   export EDITOR='hx'
 fi
@@ -12,24 +8,14 @@ if [[ -z "$PAGER" ]]; then
   export PAGER='less'
 fi
 
-#
-# Language
-#
-
 if [[ -z "$LANG" ]]; then
   export LANG='en_US.UTF-8'
 fi
 
 export LC_ALL=en_US.UTF-8
 
-#
-# Paths
-#
-
-# Ensure path arrays do not contain duplicates.
 typeset -gU cdpath fpath mailpath path
 
-# Set the list of directories that Zsh searches for programs.
 path=(
   $HOME/{,s}bin(N)
   $HOME/.local/bin
@@ -39,34 +25,20 @@ path=(
   $path
 )
 
-#
-# Less
-#
-
-# Set the default Less options.
-# Mouse-wheel scrolling has been disabled by -X (disable screen clearing).
-# Remove -X to enable it.
+# -X disables screen clearing and mouse-wheel scrolling.
 if [[ -z "$LESS" ]]; then
   export LESS='-g -i -M -R -S -w -X -z-4'
 fi
 
-# Set the Less input preprocessor.
-# Try both `lesspipe` and `lesspipe.sh` as either might exist on a system.
 if [[ -z "$LESSOPEN" ]] && (( $#commands[(i)lesspipe(|.sh)] )); then
   export LESSOPEN="| /usr/bin/env $commands[(i)lesspipe(|.sh)] %s 2>&-"
 fi
 
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if (( $+commands[brew] )); then
+  eval "$(brew shellenv)"
+fi
 
-#
-# Prune dead PATH entries
-#
-
-# macOS recreates files under /etc/paths.d on every OS update (the Cryptex
-# bootstrap dirs and a stale /pkg/env/global/bin), and /etc/zprofile's
-# path_helper injects them before this file runs. Deleting the root-owned
-# drop-ins needs sudo and the next update brings them back, so instead drop
-# any entry whose directory doesn't actually exist on disk.
+# Drop stale PATH entries injected by macOS path_helper.
 function prune_path() {
   local -a kept
   local dir
