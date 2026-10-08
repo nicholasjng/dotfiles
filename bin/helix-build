@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Build Helix from a local checkout of upstream master and install it to
-# ~/.local/bin. Re-run to pull the latest master and rebuild. Which
-# tree-sitter grammars get fetched/built is controlled by the `use-grammars`
-# key in ~/.config/helix/languages.toml.
+# Build and install Helix from upstream master.
 set -euo pipefail
 
 info()    { printf '\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
@@ -18,27 +15,50 @@ if ! command -v cargo >/dev/null; then
 fi
 
 updated=false
-if [[ ! -d "$HELIX_SRC/.git" ]]; then
+if [[ ! -e "$HELIX_SRC/.git" ]]; then
     info "Cloning Helix into $HELIX_SRC..."
     mkdir -p "$(dirname "$HELIX_SRC")"
     git clone --depth 1 "$HELIX_REPO" "$HELIX_SRC"
 else
+    checkout_status="$(git -C "$HELIX_SRC" status --porcelain)"
+    if [[ -n "$checkout_status" ]]; then
+        error "Checkout has local changes: $HELIX_SRC. Save them before updating."
+        exit 1
+    fi
+    # Check before fetching: --depth 1 can disconnect the previous tip.
+    checkout_head="$(git -C "$HELIX_SRC" rev-parse HEAD)"
+    remote_head="$(git -C "$HELIX_SRC" rev-parse origin/master)"
+    if [[ "$checkout_head" != "$remote_head" ]]; then
+        error "Checkout differs from origin/master: $HELIX_SRC. Save local commits before updating."
+        exit 1
+    fi
     info "Updating checkout to latest master..."
     git -C "$HELIX_SRC" fetch --depth 1 origin master
     git -C "$HELIX_SRC" reset --hard origin/master
     updated=true
 fi
+HELIX_SRC="$(cd "$HELIX_SRC" && pwd)"
 
 info "Building (cargo build --release)... this can take a while."
-cargo build --release --manifest-path "$HELIX_SRC/Cargo.toml"
-
-info "Installing binary to ~/.local/bin/hx..."
-mkdir -p "$HOME/.local/bin"
-ln -sf "$HELIX_SRC/target/release/hx" "$HOME/.local/bin/hx"
+# Embed the runtime path and build grammars separately.
+HELIX_DEFAULT_RUNTIME="$HELIX_SRC/runtime" HELIX_DISABLE_AUTO_GRAMMAR_BUILD=1 \
+    cargo build --release --locked --package helix-term \
+    --target-dir "$HELIX_SRC/target" --manifest-path "$HELIX_SRC/Cargo.toml"
 
 info "Fetching and building grammars..."
 HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar fetch
 HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar build
+
+info "Installing binary to ~/.local/bin/hx..."
+mkdir -p "$HOME/.local/bin"
+# Avoid following symlinks to directories.
+if [[ -L "$HOME/.local/bin/hx" ]]; then
+    unlink "$HOME/.local/bin/hx"
+elif [[ -d "$HOME/.local/bin/hx" ]]; then
+    error "A directory exists at $HOME/.local/bin/hx. Move it before installing."
+    exit 1
+fi
+ln -sf "$HELIX_SRC/target/release/hx" "$HOME/.local/bin/hx"
 
 if [[ "$updated" == true ]]; then
     info "Pruning previous checkout..."
