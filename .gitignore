@@ -1,23 +1,23 @@
-# macOS specifics
+# macOS
 .DS_Store
 
 # Python
 venv
 .venv
 
-# environment secrets
+# Environment
 env
 .env
 
-# various vscode stuff
+# Local tooling
 .vscode/
 .cache/
 .sandbox/
 
-# Zed config folders
+# Zed
 .zed
 
-# shell history
+# Shell state
 .config/zsh/.zsh_history
-.config/zsh/.zcompdump
+.config/zsh/.zcompdump*
 .config/zsh/.zcompcache

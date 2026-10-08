@@ -3,7 +3,6 @@ name = "Nicholas Junge"
 email = "nicho.junge@gmail.com"
 
 [ui]
-# Use difftastic by default
 diff-formatter = "difft"
 
 [merge-tools.difft]
