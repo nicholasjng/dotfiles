@@ -1,0 +1,22 @@
+{
+  "Project-local Python language servers": {
+    "prefix": "zed-local-python",
+    "description": "Use ty and Ruff from the project's .venv in Zed settings",
+    "body": [
+      "\"lsp\": {",
+      "  \"ty\": {",
+      "    \"binary\": {",
+      "      \"path\": \".venv/bin/ty\",",
+      "      \"arguments\": [\"server\"]",
+      "    }",
+      "  },",
+      "  \"ruff\": {",
+      "    \"binary\": {",
+      "      \"path\": \".venv/bin/ruff\",",
+      "      \"arguments\": [\"server\"]",
+      "    }",
+      "  }",
+      "}$0"
+    ]
+  }
+}

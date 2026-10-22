@@ -1,17 +1,2 @@
 # Grammars fetched and built by helix-build.
 use-grammars = { only = ["python", "rust", "toml", "yaml", "bash", "markdown", "markdown_inline", "c", "cpp", "go", "jjdescription", "jjrevset", "jjtemplate"] }
-
-[[language]]
-name = "python"
-
-[language.debugger]
-name = "debugpy"
-transport = "stdio"
-command = "python3"
-args = ["-m",  "debugpy.adapter"]
-
-[[language.debugger.templates]]
-name = "source"
-request = "launch"
-completion = [ { name = "entrypoint", completion = "filename", default = "." } ]
-args = { mode = "debug", program = "{0}"}

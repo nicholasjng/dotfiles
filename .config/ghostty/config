@@ -3,3 +3,5 @@ font-family = mononoki Nerd Font
 quick-terminal-animation-duration=0
 macos-option-as-alt = left
 macos-titlebar-style=tabs
+window-width=120
+window-height=45

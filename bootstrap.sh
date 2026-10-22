@@ -80,6 +80,7 @@ link_config .config/ghostty/config       "$HOME/.config/ghostty/config"       gh
 link_config .config/helix/languages.toml "$HOME/.config/helix/languages.toml" helix_languages.toml
 link_config .config/jj/config.toml       "$HOME/.config/jj/config.toml"       jj_config.toml
 link_config .config/zed/settings.json    "$HOME/.config/zed/settings.json"    zed_settings.json
+link_config .config/zed/snippets/json.json "$HOME/.config/zed/snippets/json.json" zed_json_snippets.json
 link_config bin/helix-build              "$HOME/.local/bin/helix-build"       helix_build_script
 
 success "Done. Open a new shell to pick up the new config."

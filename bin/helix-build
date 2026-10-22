@@ -46,8 +46,8 @@ HELIX_DEFAULT_RUNTIME="$HELIX_SRC/runtime" HELIX_DISABLE_AUTO_GRAMMAR_BUILD=1 \
     --target-dir "$HELIX_SRC/target" --manifest-path "$HELIX_SRC/Cargo.toml"
 
 info "Fetching and building grammars..."
-HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar fetch
-HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar build
+HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar fetch --strict
+HELIX_RUNTIME="$HELIX_SRC/runtime" "$HELIX_SRC/target/release/hx" --grammar build --strict
 
 info "Installing binary to ~/.local/bin/hx..."
 mkdir -p "$HOME/.local/bin"

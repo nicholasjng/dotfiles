@@ -51,3 +51,33 @@ The runtime directory is embedded in the binary at build time, following
 [Helix's source-build instructions](https://docs.helix-editor.com/building-from-source.html),
 so custom source locations also work outside a login shell. Re-run `helix-build`
 to apply this to an existing installation. `HELIX_RUNTIME` can override that path.
+
+## Zed
+
+Zed [prefers Python language servers installed in the selected virtual environment](https://zed.dev/docs/languages/python#how-zed-uses-python-toolchains).
+To explicitly use the project's `.venv` binaries, open `.zed/settings.json`,
+type `zed-local-python` inside the top-level braces, and select the snippet
+completion. Bootstrap installs this [JSON snippet](.config/zed/snippets/json.json).
+If the file already has an `lsp` section, merge the entries into it.
+Both `.venv/bin/ty` and `.venv/bin/ruff` must exist.
+
+For copying directly:
+
+```json
+{
+  "lsp": {
+    "ty": {
+      "binary": {
+        "path": ".venv/bin/ty",
+        "arguments": ["server"]
+      }
+    },
+    "ruff": {
+      "binary": {
+        "path": ".venv/bin/ruff",
+        "arguments": ["server"]
+      }
+    }
+  }
+}
+```

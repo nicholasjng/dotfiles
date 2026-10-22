@@ -64,11 +64,6 @@
   },
   "lsp": {
     "ty": {
-      // Use the project's ty version.
-      "binary": {
-        "path": ".venv/bin/ty",
-        "arguments": ["server"],
-      },
       "settings": {
         "inlayHints": {
           "variableTypes": false,
