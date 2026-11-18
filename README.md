@@ -25,6 +25,7 @@ Config files live under `.config/` in the repo, and mirror the XDG layout in `$H
 2. Initialises git submodules (zsh plugins — zsh-autosuggestions, zsh-syntax-highlighting).
 3. Moves existing files and symlinks into a unique directory under `$XDG_STATE_HOME/dotfiles-backup` (default `~/.local/state/dotfiles-backup`). Previous backups are preserved.
 4. Creates symlinks from `$HOME` into the repo. Re-running leaves correct links in place.
+5. Installs the Rust tools listed in `Cargofile` that aren't installed yet (see [Rust tools](#rust-tools)).
 
 `.zshenv` sets `ZDOTDIR=$HOME/.config/zsh`, so zsh loads `.zprofile` and `.zshrc` from there instead of `$HOME`.
 

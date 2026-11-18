@@ -82,5 +82,14 @@ link_config .config/jj/config.toml       "$HOME/.config/jj/config.toml"       jj
 link_config .config/zed/settings.json    "$HOME/.config/zed/settings.json"    zed_settings.json
 link_config .config/zed/snippets/json.json "$HOME/.config/zed/snippets/json.json" zed_json_snippets.json
 link_config bin/helix-build              "$HOME/.local/bin/helix-build"       helix_build_script
+link_config bin/cargo-sync               "$HOME/.local/bin/cargo-sync"        cargo_sync_script
+
+# Like `brew bundle --no-upgrade`: install what's missing, update nothing.
+# Not fatal: private repos need ssh access to GitHub, which a fresh machine
+# may not have yet.
+info "Installing Rust tools from Cargofile..."
+if ! "$DOTFILES_DIR/bin/cargo-sync" --missing; then
+    error "Some Rust tools weren't installed. Run cargo-sync again once ssh access to GitHub works."
+fi
 
 success "Done. Open a new shell to pick up the new config."
