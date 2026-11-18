@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Install or update the Rust tools listed in the dotfiles' Cargofile from
+# their repos' default branch. Also runs as `cargo sync`.
+set -euo pipefail
+
+info()    { printf '\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
+success() { printf '\033[1;32m  ✓\033[0m %s\n' "$*"; }
+error()   { printf '\033[1;31mError:\033[0m %s\n' "$*" >&2; }
+
+usage() {
+    cat <<'EOF'
+Usage: cargo-sync [--missing | --force]
+
+Install or update every tool in the Cargofile from its repo's default branch.
+Tools whose branch hasn't moved since the last install are skipped.
+
+  --missing  only install tools that aren't installed yet (used by bootstrap)
+  --force    rebuild every tool, even when it is up to date
+
+CARGOFILE overrides the list's location; CARGO_INSTALL_ROOT, the install root.
+EOF
+}
+
+# Invoked as `cargo sync`, cargo passes the subcommand name first.
+if [[ "${1:-}" == sync ]]; then
+    shift
+fi
+
+mode=update
+case "${1:-}" in
+    '')        ;;
+    --missing) mode=missing ;;
+    --force)   mode=force ;;
+    -h|--help) usage; exit 0 ;;
+    *)         error "Unknown argument: $1"; usage >&2; exit 2 ;;
+esac
+
+# Find the Cargofile next to this script's real location, through the
+# ~/.local/bin symlink bootstrap creates.
+src="${BASH_SOURCE[0]}"
+while [[ -L "$src" ]]; do
+    dir="$(cd -P "$(dirname "$src")" && pwd)"
+    src="$(readlink "$src")"
+    [[ "$src" == /* ]] || src="$dir/$src"
+done
+DOTFILES_DIR="$(cd -P "$(dirname "$src")/.." && pwd)"
+CARGOFILE="${CARGOFILE:-$DOTFILES_DIR/Cargofile}"
+
+if [[ ! -f "$CARGOFILE" ]]; then
+    error "No Cargofile at $CARGOFILE."
+    exit 1
+fi
+if ! command -v cargo >/dev/null; then
+    error "cargo not found. Install the Rust toolchain first (brew bundle installs it)."
+    exit 1
+fi
+
+# Fetch with the system git, which uses your ssh config, agent and credential
+# helpers. Cargo's built-in git client doesn't, so private repos would fail.
+export CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+installed="$(cargo install --list)"
+failed=()
+# `|| [[ -n … ]]` also reads a last line with no trailing newline.
+while read -r url package _ || [[ -n "${url:-}" ]]; do
+    [[ -z "$url" || "$url" == \#* ]] && continue
+    name="${package:-$(basename "${url%.git}")}"
+
+    if [[ "$mode" == missing ]] && grep -q "^$name v" <<<"$installed"; then
+        success "$name (already installed)"
+        continue
+    fi
+
+    args=(install --locked --git "$url")
+    [[ -n "$package" ]] && args+=("$package")
+    [[ "$mode" == force ]] && args+=(--force)
+
+    info "Syncing $name from $url..."
+    # stdin from /dev/null: cargo must not read the rest of the Cargofile.
+    if cargo "${args[@]}" </dev/null; then
+        success "$name"
+    else
+        error "Failed to install $name."
+        failed+=("$name")
+    fi
+done <"$CARGOFILE"
+
+if (( ${#failed[@]} > 0 )); then
+    error "${#failed[@]} tool(s) failed: ${failed[*]}"
+    exit 1
+fi
+success "Done."

@@ -39,6 +39,24 @@ the limit. `JJPROMPT_SYMBOL` changes the prompt symbol, and
 Run `zsh_update_plugins` to update the plugin submodules to their upstream tips.
 Commit the changed submodule references to keep other installations in sync.
 
+## Rust tools
+
+`Cargofile` lists Rust tools built from source, one git repo per line, like
+`Brewfile` does for Homebrew packages. Run `cargo-sync` (or `cargo sync`) to
+install all of them and bring each up to date with its repo's default branch.
+Cargo rebuilds a tool only when that branch has moved since the last install.
+
+- `cargo-sync --missing` installs only the tools that aren't installed yet.
+  Bootstrap runs this.
+- `cargo-sync --force` rebuilds every tool.
+
+Binaries go to `~/.cargo/bin`, or to `$CARGO_INSTALL_ROOT/bin` if that is set.
+Fetches go through the system `git`, so private repos work with your ssh
+agent. List them with an `ssh://git@github.com/...` URL, because cargo doesn't
+accept the `git@github.com:...` form. To add a tool, append its repo URL to
+`Cargofile`. If the repo has several binary packages, add the package name
+after the URL.
+
 ## Helix
 
 Run `helix-build` after bootstrap to build and install `hx` from upstream master.

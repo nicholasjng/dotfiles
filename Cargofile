@@ -1,0 +1,7 @@
+# Rust tools built from source by `cargo-sync`, one git repo per line.
+# Each is installed from its default branch. If a repo has several binary
+# packages, name the one to install after the URL. Private repos need an
+# ssh:// URL (cargo doesn't accept the scp-style git@host:path form).
+
+https://github.com/nicholasjng/picky
+ssh://git@github.com/nicholasjng/weave.git
